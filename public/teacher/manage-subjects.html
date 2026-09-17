@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="teacherApp">
+<head>
+  <meta charset="UTF-8">
+  <title>Manage Subjects | Smart Attendance System</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+  <style>
+    .subjects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-top: 1.5rem;
+    }
+    .subject-card {
+      background: white;
+      border-radius: 16px;
+      padding: 1.75rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+      border: 1px solid #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      transition: box-shadow 0.2s, transform 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .subject-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0;
+      width: 4px; height: 100%;
+      background: linear-gradient(180deg, #6366f1, #4f46e5);
+      border-radius: 4px 0 0 4px;
+    }
+    .subject-card:hover {
+      box-shadow: 0 8px 25px rgba(0,0,0,0.07);
+      transform: translateY(-2px);
+    }
+    .subject-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1e293b;
+      padding-left: 0.5rem;
+    }
+    .subject-meta {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      padding-left: 0.5rem;
+    }
+    .subject-actions {
+      display: flex;
+      gap: 0.5rem;
+      padding-left: 0.5rem;
+    }
+    .btn-del {
+      background: #fef2f2;
+      color: #ef4444;
+      border: 1px solid #fecaca;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s;
+    }
+    .btn-del:hover { background: #fee2e2; }
+
+    .add-card {
+      background: #f9fafb;
+      border-radius: 16px;
+      border: 2px dashed #e5e7eb;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-height: 160px;
+    }
+    .add-card:hover {
+      background: #eef2ff;
+      border-color: #6366f1;
+    }
+    .add-card i { font-size: 2rem; color: #6366f1; opacity: 0.6; }
+    .add-card span { font-size: 0.9rem; font-weight: 600; color: #6b7280; }
+
+    .stats-bar {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .stat-pill {
+      background: white;
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .stat-pill-icon {
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+    .stat-pill-val { font-size: 1.5rem; font-weight: 800; color: #1e293b; }
+    .stat-pill-lbl { font-size: 0.7rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; }
+
+    /* Add Subject Modal */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+    .modal-box {
+      background: white;
+      border-radius: 20px;
+      padding: 2.5rem;
+      width: 100%; max-width: 450px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+    }
+    .modal-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #1e293b;
+      margin-bottom: 0.5rem;
+    }
+    .modal-subtitle { font-size: 0.9rem; color: #64748b; margin-bottom: 2rem; }
+    .alert-error {
+      background: #fef2f2; color: #dc2626;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    .empty-state {
+      background: white;
+      border-radius: 16px;
+      padding: 4rem;
+      text-align: center;
+      color: #9ca3af;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+      grid-column: 1 / -1;
+    }
+    .empty-state i { font-size: 3rem; margin-bottom: 1rem; display: block; opacity: 0.3; }
+  </style>
+</head>
+<body ng-controller="SubjectsCtrl">
+
+  <aside class="sidebar">
+    <a href="dashboard.html" class="sidebar-logo"><i class="fas fa-layer-group"></i> Teacher's Dashboard</a>
+    <nav class="nav-menu">
+      <a href="dashboard.html" class="nav-item"><i class="fas fa-chart-pie"></i> Home</a>
+      <a href="students.html" class="nav-item"><i class="fas fa-address-book"></i> Student list</a>
+      <a href="attendance.html" class="nav-item"><i class="fas fa-expand-arrows-alt"></i> Face Attendance</a>
+      <a href="manual-attendance.html" class="nav-item"><i class="fas fa-tasks"></i> Manual Attendance</a>
+      <a href="attendance-report.html" class="nav-item"><i class="fas fa-chart-bar"></i> Reports</a>
+      <a href="email.html" class="nav-item"><i class="fas fa-satellite-dish"></i> Smart Alerts</a>
+      <a href="manage-subjects.html" class="nav-item active"><i class="fas fa-book-open"></i> Manage Subjects</a>
+    </nav>
+    <div style="position: absolute; bottom: 2rem; left: 1rem;">
+      <a href="#" ng-click="logout()" class="nav-item" style="color: #cbd5e1 !important; text-decoration: none; display: flex; align-items: center;">
+        <i class="fas fa-sign-out-alt" style="margin-right: 0.75rem;"></i> Logout
+      </a>
+    </div>
+  </aside>
+
+  <main class="main-wrapper">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Manage Subjects</h1>
+        <p class="page-subtitle">Add, view and remove subjects assigned to your classes.</p>
+      </div>
+      <button class="btn btn-primary" ng-click="openAddModal()">
+        <i class="fas fa-plus" style="margin-right: 0.5rem;"></i> Add New Subject
+      </button>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+      <div class="stat-pill">
+        <div class="stat-pill-icon" style="background: #eef2ff;">
+          <i class="fas fa-book" style="color: #6366f1;"></i>
+        </div>
+        <div>
+          <div class="stat-pill-val">{{subjects.length || 0}}</div>
+          <div class="stat-pill-lbl">Total Subjects</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subjects Grid -->
+    <div class="subjects-grid">
+
+      <!-- Existing subjects -->
+      <div class="subject-card" ng-repeat="s in subjects">
+        <div class="subject-name"><i class="fas fa-book-open" style="color:#6366f1; margin-right:0.5rem;"></i>{{s.name}}</div>
+        <div class="subject-meta">
+          <i class="fas fa-calendar-alt" style="margin-right:0.3rem;"></i>
+          Added {{s.createdAt | date:'dd MMM yyyy'}}
+        </div>
+        <div class="subject-actions">
+          <button class="btn-del" ng-click="deleteSubject(s)">
+            <i class="fas fa-trash-alt"></i> Delete
+          </button>
+        </div>
+      </div>
+
+      <!-- Add card -->
+      <div class="add-card" ng-click="openAddModal()">
+        <i class="fas fa-plus-circle"></i>
+        <span>Add New Subject</span>
+      </div>
+
+      <!-- Empty state -->
+      <div class="empty-state" ng-if="subjects && subjects.length === 0">
+        <i class="fas fa-book"></i>
+        <p style="font-weight: 600; color: #4b5563; margin-bottom: 0.5rem;">No subjects yet</p>
+        <p style="font-size: 0.9rem;">Click "Add New Subject" to get started.</p>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Add Subject Modal -->
+  <div class="modal-backdrop" ng-if="showAddModal">
+    <div class="modal-box">
+      <h2 class="modal-title">Add New Subject</h2>
+      <p class="modal-subtitle">Create a new subject for your classes.</p>
+
+      <div class="alert-error" ng-if="addError">{{addError}}</div>
+
+      <form ng-submit="submitAdd()">
+        <div class="form-group">
+          <label>Subject Name</label>
+          <input type="text" ng-model="newSubjectName" class="form-control"
+                 placeholder="e.g. Advanced Web Development" required autofocus>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-outline" ng-click="closeAddModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" ng-disabled="addLoading">
+            <i class="fas fa-spinner fa-spin" style="margin-right:0.4rem;" ng-if="addLoading"></i>
+            {{addLoading ? 'Adding...' : 'Add Subject'}}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    angular.module('teacherApp', [])
+    .controller('SubjectsCtrl', function($scope, $http, $window) {
+      const token = $window.localStorage.getItem('teacherToken');
+      if (!token) $window.location.href = 'login.html';
+      $http.defaults.headers.common['Authorization'] = 'Bearer ' + token;
+
+      $scope.subjects = [];
+      $scope.showAddModal = false;
+      $scope.newSubjectName = '';
+      $scope.addError = null;
+      $scope.addLoading = false;
+
+      const loadSubjects = () => {
+        $http.get('/api/teacher/subjects').then(res => {
+          $scope.subjects = res.data.data;
+        });
+      };
+      loadSubjects();
+
+      $scope.openAddModal = () => {
+        $scope.showAddModal = true;
+        $scope.newSubjectName = '';
+        $scope.addError = null;
+      };
+
+      $scope.closeAddModal = () => {
+        $scope.showAddModal = false;
+      };
+
+      $scope.submitAdd = () => {
+        if (!$scope.newSubjectName.trim()) return;
+        $scope.addLoading = true;
+        $scope.addError = null;
+        $http.post('/api/teacher/subjects', { name: $scope.newSubjectName.trim() })
+          .then(() => {
+            $scope.showAddModal = false;
+            loadSubjects();
+          })
+          .catch(err => {
+            $scope.addError = (err.data && err.data.message) || 'Failed to add subject';
+          })
+          .finally(() => { $scope.addLoading = false; });
+      };
+
+      $scope.deleteSubject = (s) => {
+        if (!confirm(`Delete subject "${s.name}"? This will NOT delete attendance records.`)) return;
+        $http.delete('/api/teacher/subjects/' + s._id)
+          .then(() => loadSubjects())
+          .catch(err => alert((err.data && err.data.message) || 'Delete failed'));
+      };
+
+      $scope.logout = () => {
+        $window.localStorage.removeItem('teacherToken');
+        $window.localStorage.removeItem('teacherName');
+        $window.location.href = 'login.html';
+      };
+    });
+  </script>
+</body>
+</html>

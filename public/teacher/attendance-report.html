@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="teacherApp">
+<head>
+  <meta charset="UTF-8">
+  <title>Attendance Report | Smart Attendance System</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+</head>
+<body ng-controller="ReportCtrl">
+
+  <aside class="sidebar">
+    <a href="dashboard.html" class="sidebar-logo"><i class="fas fa-layer-group"></i> Teacher's Dashboard</a>
+    <nav class="nav-menu">
+      <a href="dashboard.html" class="nav-item"><i class="fas fa-chart-pie"></i> Home</a>
+      <a href="students.html" class="nav-item"><i class="fas fa-address-book"></i> Student list</a>
+      <a href="attendance.html" class="nav-item"><i class="fas fa-expand-arrows-alt"></i> Face Attendance</a>
+      <a href="manual-attendance.html" class="nav-item"><i class="fas fa-tasks"></i> Manual Attendance</a>
+      <a href="attendance-report.html" class="nav-item active"><i class="fas fa-chart-bar"></i> Reports</a>
+      <a href="email.html" class="nav-item"><i class="fas fa-satellite-dish"></i> Smart Alerts</a>
+      <a href="manage-subjects.html" class="nav-item"><i class="fas fa-book-open"></i> Manage Subjects</a>
+    </nav>
+  </aside>
+
+  <main class="main-wrapper">
+    <div class="page-header" style="margin-bottom: 2.5rem;">
+      <div>
+        <h1 class="page-title">Attendance Reports</h1>
+        <p class="page-subtitle">Query and review historical attendance records by subject and date.</p>
+      </div>
+    </div>
+
+    <div class="content-box">
+      <div class="box-header">
+        <div class="box-title">FILTER PARAMETERS</div>
+      </div>
+      <div style="padding: 1.5rem;">
+        <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 1.5rem; align-items: flex-end;">
+          <div class="form-group" style="margin: 0;">
+            <label>Subject</label>
+            <select ng-model="filters.subject_id" class="form-control" ng-options="s._id as s.name for s in subjects"></select>
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label>Date</label>
+            <input type="date" ng-model="filters.date" class="form-control">
+          </div>
+          <button class="btn btn-primary" style="height: 42px;" ng-click="loadReport()">
+            <i class="fas fa-search"></i> Search
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:white; border-radius:16px; box-shadow:0 4px 15px rgba(0,0,0,0.03); overflow:hidden;" ng-if="reportData.length > 0">
+      <div style="padding:1rem 2rem; border-bottom:1px solid #f3f4f6; display:flex; justify-content:space-between; align-items:center;" ng-if="editMode" style="background: #fffbeb; border-bottom: 1px solid #fde68a;">
+        <div style="font-size:0.75rem; font-weight:700; color:#d97706; text-transform:uppercase;"><i class="fas fa-exclamation-triangle" style="margin-right:0.3rem;"></i> EDIT MODE ACTIVE</div>
+        <button class="btn btn-primary" style="padding: 0.25rem 1rem; border-radius: 6px; font-size: 0.8rem;" ng-click="saveChanges()">Save Changes</button>
+      </div>
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left; padding:1rem 2rem; background:#f9fafb; font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; border-bottom:1px solid #f1f5f9;">ENROLLMENT</th>
+            <th style="text-align:left; padding:1rem 2rem; background:#f9fafb; font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; border-bottom:1px solid #f1f5f9;">STUDENT NAME</th>
+            <th style="text-align:center; padding:1rem 2rem; background:#f9fafb; font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; border-bottom:1px solid #f1f5f9;">STATUS</th>
+            <th style="text-align:left; padding:1rem 2rem; background:#f9fafb; font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; border-bottom:1px solid #f1f5f9;">MARKED BY</th>
+            <th style="text-align:right; padding:1rem 2rem; background:#f9fafb; font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; border-bottom:1px solid #f1f5f9;" ng-if="editMode">ACTION</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr ng-repeat="r in reportData" style="border-bottom:1px solid #f8fafc;">
+            <td style="padding:1.25rem 2rem; color:#6366f1; font-weight:700; font-family:monospace;">{{r.enrollment}}</td>
+            <td style="padding:1.25rem 2rem; font-weight:600; color:#1e293b;">{{r.name}}</td>
+            <td style="padding:1.25rem 2rem; text-align:center;">
+              <span style="padding:0.25rem 0.75rem; border-radius:9999px; font-size:0.75rem; font-weight:700;" 
+                    ng-style="r.status === 'Present' ? {'background':'#f0fdf4','color':'#10b981'} : {'background':'#fef2f2','color':'#ef4444'}">
+                {{r.status}}
+              </span>
+            </td>
+            <td style="padding:1.25rem 2rem; color:#64748b; font-size:0.85rem;"><i class="fas fa-terminal" style="margin-right:0.3rem;"></i>{{r.marked_by}}</td>
+            <td style="padding:1.25rem 2rem; text-align:right;" ng-if="editMode">
+              <button style="background:white; border:1px solid #e5e7eb; border-radius:6px; padding:0.3rem 0.75rem; font-size:0.8rem; cursor:pointer; color:#475569;" ng-click="toggleStatus(r)">
+                Toggle Status
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="background:white; border-radius:16px; padding:4rem; text-align:center; color:#9ca3af; box-shadow:0 4px 15px rgba(0,0,0,0.03);" ng-if="reportData && reportData.length === 0">
+      <i class="fas fa-search" style="font-size:3rem; margin-bottom:1rem; opacity:0.3;"></i>
+      <p>No attendance records found for the selected subject and date.</p>
+    </div>
+
+  </main>
+
+  <script>
+    angular.module('teacherApp', [])
+    .controller('ReportCtrl', function($scope, $http, $window, $filter) {
+      const token = $window.localStorage.getItem('teacherToken');
+      if (!token) $window.location.href = 'login.html';
+      $http.defaults.headers.common['Authorization'] = 'Bearer ' + token;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      $scope.filters = {
+        subject_id: urlParams.get('subject_id') ? parseInt(urlParams.get('subject_id')) : null,
+        date: urlParams.get('date') ? new Date(urlParams.get('date')) : new Date()
+      };
+
+      $http.get('/api/teacher/subjects').then(res => $scope.subjects = res.data.data);
+
+      $scope.loadReport = () => {
+        if(!$scope.filters.subject_id) return alert('Please select a subject first.');
+        const d = $filter('date')($scope.filters.date, 'yyyy-MM-dd');
+        $http.get('/api/teacher/attendance-report', { params: { subject_id: $scope.filters.subject_id, date: d } })
+          .then(res => $scope.reportData = res.data.data);
+      };
+
+      $scope.toggleEdit = () => { $scope.editMode = !$scope.editMode; };
+      $scope.toggleStatus = (r) => { r.status = r.status === 'Present' ? 'Absent' : 'Present'; r.dirty = true; };
+      
+      $scope.saveChanges = () => {
+        const dirtyRecords = $scope.reportData.filter(r => r.dirty);
+        if (dirtyRecords.length === 0) return alert("No modifications detected.");
+        
+        const d = $filter('date')($scope.filters.date, 'yyyy-MM-dd');
+        const promises = dirtyRecords.map(r => {
+            return $http.post('/api/teacher/attendance/manual', {
+                subject_id: $scope.filters.subject_id,
+                date: d,
+                attendance_list: [{ enrollment: r.enrollment, status: r.status }]
+            });
+        });
+
+        Promise.all(promises).then(() => {
+            alert("Database synchronized with modifications.");
+            $scope.editMode = false;
+            $scope.loadReport();
+        });
+      };
+
+      if ($scope.filters.subject_id) $scope.loadReport();
+    });
+  </script>
+</body>
+</html>
